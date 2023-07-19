@@ -13,10 +13,11 @@ const jwtSignOptions = {
 
 router.get('/orderlist', admin_verifyJWT,  async(req, res) => {
     try{
-        const order = await Order.find().select('_id order_price createdAt ordering_person order_status')
+        const order = await Order.find().select('_id order_price createdAt date ordering_person order_status')
         res.status(200).json(order) ; 
+        console.log(order)
     } catch(error){
-        res.status(500).json({message: error.message})
+        res.status(500).end()
     }
 })
 
@@ -25,20 +26,19 @@ router.get('/orderlist/:date', admin_verifyJWT,  async(req, res) => {
         if(req.params.date){
             console.log(req.params.date.toString())
             const order = await Order.aggregate([
-                { $match :{  "createdAt" : {
-                    $gte : new Date(req.params.date.toString())
+                { $match :{  "date" : {
+                    $gte : new Date(req.params.date.toString()),
+                    $lte: new Date(req.params.date.toString())
             }
         }}
     ])
             res.status(200).json(order) ;
-            console.log('show specific')
         } else {
         const order = await Order.find().select('_id order_price createdAt ordering_person order_status')
         res.status(200).json(order) ;
     }      
     } catch(error){
-        res.status(500).json({message: error.message})
-        console.log(error.message)
+        res.status(500).end()
     }
 })
 
@@ -55,13 +55,14 @@ router.get('/orderdetail/:id',  admin_verifyJWT, async(req, res) => {
         res.status(200).json(order) ; 
     } catch(error){
         console.log(error.message)
-        res.status(500).json({message: error.message})
+        res.status(500).end()
     }
 })
 
-router.post('/adminRegister', admin_verifyJWT, async(req, res) => {
+router.post('/adminRegister', async(req, res) => {
     try{    
         let admin = new Admin({
+            "account"   : req.body.account,
             "firstname"   :   req.body.firstname,   
             "lastname"    :   req.body.lastname,
             "password"    :   req.body.password,
@@ -74,11 +75,11 @@ router.post('/adminRegister', admin_verifyJWT, async(req, res) => {
         } else {
         await admin.save()  
 
-        const token = jwt.sign({ admin : admin.account }, "secretKey", { expiresIn: '3000s' },jwtSignOptions)
+        const token = jwt.sign({ admin : admin.account }, process.env["ACCESS_TOKEN_SECRET"], { expiresIn: '3000s' },jwtSignOptions)
             res.status(200).json({'access':token });
         }
     } catch(error) {
-        res.status(500).json({message: error.message});
+        res.status(500).end();
     }
 })
 
@@ -95,27 +96,15 @@ router.post('/login', async(req, res) => {
                 auth : 'ADMIN_LEVEL',
                 account : admin.account
             }
-            const token = jwt.sign(payload, "secretKey", { expiresIn: '3000s' },{ algorithm: 'RS256' })
+            const token = jwt.sign(payload, process.env["ACCESS_TOKEN_SECRET"], { expiresIn: '3000s' },{ algorithm: 'RS256' })
             res.status(200).json({'adminTokenAccess':token});
         } else {
             res.status(401).json({message:'password is incorrect'})
         }
     }
     } catch(error) {
-            res.status(500).json({message: error.message});
+            res.status(500).end();
         }
-})
-
-// router.post('/lunched',verifyJWT, async(req, res)=>{
-router.post('/lunched', admin_verifyJWT, async(req, res)=>{
-    // this.jwtSignOptions = jwtSignOptions
-    try{
-        const product = await Product.create(req.body)
-        console.log(product)
-         res.status(200).json(product)     
-    } catch(error){
-        res.status(500).json({message: error.message})
-    }
 })
 
 router.post('/modified/:id', admin_verifyJWT, async(req, res) => {
@@ -130,7 +119,18 @@ router.post('/modified/:id', admin_verifyJWT, async(req, res) => {
         console.log(order)
         res.status(200).json(order);
     } catch(error) {
-        res.status(500).json({message: error.message});
+        res.status(500).end();
+    }
+})
+
+router.post('/launch', admin_verifyJWT, async(req, res) => {
+    try {
+        let item = new Product(req.body)
+        item.save()
+    }
+    catch (error) {
+        console.log(error)
+        res.status(500).end()
     }
 })
 

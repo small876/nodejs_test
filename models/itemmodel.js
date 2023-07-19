@@ -18,7 +18,8 @@ const productsSchema = mongoose.Schema(
         },
         intro:{
             type:String,
-            required:true
+            required:true,
+            trim:true
         }
     },
     {

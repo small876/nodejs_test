@@ -14,6 +14,7 @@ const adminRouter = require("./routes/admin")
 
 const ObjectId = mongoose.Schema.Types.ObjectId
 
+// var mongoDB = 'mongodb://127.0.0.1:27017/'
 var mongodb = process.env["mongourl"]
 var PORT = process.env.port || 3000
 app.use(express.json())
@@ -30,7 +31,7 @@ app.get('/',(req,res)=>{
 ).listen(PORT,(console.log(`node is running in ${PORT}`)))
 
 mongoose.connect(mongodb)
-.then(console.log('connected to DB'))
+.then(console.log('connected to mongoDB'))
 .catch((err)=>{console.log(err)})
 
 app.get('/products', async(req, res)=>{
@@ -39,19 +40,18 @@ app.get('/products', async(req, res)=>{
         console.log("get products") 
         res.status(200).json(products);    
     } catch(error){
-        res.status(500).json({message: error.message})
+        res.status(500).end()
     }
 })
 
 app.get('/productsdetail/:id', async(req, res)=>{
         try{
-            let itemid = new mongo.ObjectId(req.params.id)
-            const itemdetail = await Product.findOne(itemid)
+            const itemdetail = await Product.findById(req.params.id)
             console.log(itemdetail) 
             res.status(200).json(itemdetail)     
         } catch(error){
             console.log(error.message)
-            res.status(500).json({message: error.message})
+            res.status(500).end()
         }
 })
 
